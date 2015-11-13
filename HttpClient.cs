@@ -242,29 +242,41 @@ namespace Craswell.WebScraping
             this.logger.InfoFormat(
                 "Downloading file from {0}...",
                 url);
-            
-            using (WebClientWithCookies wc = this.CreateWebClient())
+
+            try
             {
-                var tmpName = string.Format("/tmp/{0}", Guid.NewGuid());
 
-                this.logger.DebugFormat(
-                    "Using temporary file name {0}",
-                    tmpName);
+                using (WebClientWithCookies wc = this.CreateWebClient())
+                {
+                    var tmpName = Path.Combine(
+                        Path.GetTempPath(),
+                        Guid.NewGuid().ToString());
 
-                wc.DownloadFile(
-                    url,
-                    tmpName);
+                    this.logger.InfoFormat(
+                        "Using temporary file name {0}",
+                        tmpName);
 
-                string fileName = this.CreateDownloadedFileName(wc);
-                fileName = string.Concat(Guid.NewGuid(), fileName);
+                    wc.DownloadFile(
+                        url,
+                        tmpName);
 
-                this.logger.InfoFormat(
-                    "Saving downloaded file as {0}",
-                    fileName);
+                    string fileName = this.CreateDownloadedFileName(wc);
 
-                File.Move(
-                    tmpName,
-                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, fileName));
+                    this.logger.InfoFormat(
+                        "Saving downloaded file as {0}",
+                        fileName);
+
+                    File.Move(
+                        tmpName,
+                        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, fileName));
+                }
+
+            }
+            catch(Exception e)
+            {
+                this.logger.Error(
+                    "File download failed.",
+                    e);
             }
         }
 
@@ -607,7 +619,7 @@ namespace Craswell.WebScraping
                 if (!string.IsNullOrEmpty(fileName))
                 {
                     fileName = fileName.Replace("\"", string.Empty);
-                    fileName = string.Concat(Guid.NewGuid(), fileName);
+                    fileName = string.Concat(Guid.NewGuid(), "_", fileName);
                 }
             }
 
