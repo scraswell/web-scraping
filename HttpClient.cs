@@ -237,8 +237,11 @@ namespace Craswell.WebScraping
         /// Downloads the file.
         /// </summary>
         /// <param name="url">URL.</param>
-        public void DownloadFile(string url)
+        /// <returns>The name of the downloaded file.</returns>
+        public string DownloadFile(string url)
         {
+            string absolutePath = string.Empty;
+
             this.logger.InfoFormat(
                 "Downloading file from {0}...",
                 url);
@@ -266,11 +269,12 @@ namespace Craswell.WebScraping
                         "Saving downloaded file as {0}",
                         fileName);
 
+                    absolutePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, fileName);
+
                     File.Move(
                         tmpName,
-                        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, fileName));
+                        absolutePath);
                 }
-
             }
             catch(Exception e)
             {
@@ -278,6 +282,8 @@ namespace Craswell.WebScraping
                     "File download failed.",
                     e);
             }
+
+            return absolutePath;
         }
 
         /// <summary>
@@ -329,14 +335,14 @@ namespace Craswell.WebScraping
         /// <param name="elementSelector">Element selector.</param>
         public string GetElementText(string elementSelector)
         {
-            this.logger.InfoFormat(
+            this.logger.DebugFormat(
                 "Getting the text for element {0}",
                 elementSelector);
 
             string elementText = this.GetElementByCssSelector(elementSelector)
                 .GetAttribute("textContent");
 
-            this.logger.InfoFormat(
+            this.logger.DebugFormat(
                 "The text found was '{0}'",
                 elementText);
 
@@ -414,6 +420,36 @@ namespace Craswell.WebScraping
             }
 
             return attributeValues.ToArray();
+        }
+
+        /// <summary>
+        /// Enumerates the child elements of an element and maps their text to an attribute value.
+        /// </summary>
+        /// <param name="elementSelector">The selector to find the element.</param>
+        /// <param name="attributeToMap">The attribute to map.</param>
+        /// <returns>A dictionary mapping element text to an attribute value.</returns>
+        public IDictionary<string, string> EnumerateSelect(string elementSelector, string attributeToMap)
+        {
+            Dictionary<string, string> enumeratedData = new Dictionary<string, string>();
+
+            ReadOnlyCollection<IWebElement> elements = this.driver
+                .FindElementsByCssSelector(elementSelector);
+
+            foreach (IWebElement element in elements)
+            {
+                string attributeValue = element.GetAttribute(attributeToMap);
+
+                if (string.IsNullOrEmpty(attributeValue))
+                {
+                    continue;
+                }
+
+                enumeratedData.Add(
+                    element.GetAttribute("textContent"),
+                    element.GetAttribute(attributeToMap));
+            }
+
+            return enumeratedData;
         }
 
         /// <summary>
